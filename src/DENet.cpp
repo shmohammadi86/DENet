@@ -47,21 +47,28 @@ mat zscore(mat A) {
 }
 
 // [[Rcpp::export]]
-arma::sp_mat DENet(arma::sp_mat &G0, arma::mat &A, arma::uvec x, arma::uvec y, bool logpval_weights = false, double min_pval = 1e-300) {
+arma::field<arma::sp_mat> DENet(arma::sp_mat &G0, arma::mat &A, arma::uvec x, arma::uvec y, bool logpval_weights = false, double min_pval = 1e-300) {
+	arma::field<arma::sp_mat> out(2);
+
 	double nx = x.n_elem;
 	double ny = y.n_elem;
 	
 	if(nx < 3 | ny < 3) {
 		fprintf(stderr, "Too few samples\n");
-		return(G0);
+		return(out);
 	}
+
 	
 	printf("Extracting submatrices (nx = %d, ny = %d)\n", (int)nx, (int)ny);
+	// Make them 0-based
+	x = x - 1;
+	y = y - 1;
+
 	mat Z = zscore(trans(A));
 	
 	arma::mat Ax = Z.rows(x);
 	arma::mat Ay = Z.rows(y);
-	
+
 	printf("Computing pairwise statistics ... ");
 	arma::mat Sx = cov(Ax);
 	Sx.replace(datum::nan, 0); 
@@ -74,11 +81,11 @@ arma::sp_mat DENet(arma::sp_mat &G0, arma::mat &A, arma::uvec x, arma::uvec y, b
 	rowvec mx = mean(Ax);
 	rowvec my = mean(Ay);	
 	arma::vec delta = trans(mx - my);
-	printf("S: %dx%d, delta: %d\n", S.n_rows, S.n_cols, delta.n_elem);
 	
 	vec mu = trans(nx*mx + ny*my)/(nx+ny);
 	vec sigma = S.diag();
 	vec cv = mu / sigma;
+		
 	// Update the network
 	printf("Updating edge weights\n");
 	
@@ -104,50 +111,55 @@ arma::sp_mat DENet(arma::sp_mat &G0, arma::mat &A, arma::uvec x, arma::uvec y, b
 		mat sx = Sx(idx, idx);
 		mat sy = Sy(idx, idx);
 		
-		/*
-		idx.print("idx");
-		sx.print("sx");
-		sy.print("sy");
-		sub_S.print("S");
-		sub_Sinv.print("sub_Sinv");
-		sub_delta.print("sub_delta");
-		*/
 		double F = kappa1 * arma::mat(trans(sub_delta) * sub_Sinv * sub_delta)(0);
+				
+		(*it) = F;
+	}	
+	G.replace(datum::nan, 0); 
+	
+	
+	arma::sp_mat Gp = G;	
+	for(it = Gp.begin(); it != Gp.end(); ++it) {
+		double F = (*it);
 		
-		
-/*
 		int df1 = q;
 		int df2 = n - q - 1;
 		double pval = Fpval(F,df1,df2);
 
-		pval = logpval_weights? (2*w*pval/(w+pval)):pval; // Combine p-values, if needed, using Harmonic mean of p-values (https://www.pnas.org/content/116/4/1195)
-	*/
-		double pval = F;
+		//pval = logpval_weights? (2*w*pval/(w+pval)):pval; // Combine p-values, if needed, using Harmonic mean of p-values (https://www.pnas.org/content/116/4/1195)	
 		pval = max(pval, min_pval);
 		
-		(*it) = pval;
+		(*it) = -log10(pval);
 	}	
-//	G.transform( [](double pval) { return (-log10(pval)); } );
-	G.replace(datum::nan, 0); 
 
 	printf("Done\n");
 	
+	out(0) = G;
+	out(1) = Gp;
 	
-	return(G);
+		
+	return(out);
 }
 
 // [[Rcpp::export]]
-arma::mat DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, double min_pval = 1e-300) {
+arma::field<arma::mat> DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, double min_pval = 1e-300) {	
+	arma::field<arma::mat> out(2);
+	
 	double nx = x.n_elem;
 	double ny = y.n_elem;
 	
 	if(nx < 3 | ny < 3) {
 		fprintf(stderr, "Too few samples\n");
-		return(mat());
+		return(out);
 	}
+
+	// Make them 0-based
+	x = x - 1;
+	y = y - 1;
 	
 	printf("Extracting submatrices (nx = %d, ny = %d)\n", (int)nx, (int)ny);
 	mat Z = zscore(trans(A));
+	
 	
 	arma::mat Ax = Z.rows(x);
 	arma::mat Ay = Z.rows(y);
@@ -173,6 +185,7 @@ arma::mat DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, double min_pval =
 	printf("Updating edge weights\n");
 	
 	arma::mat G = zeros(size(S));
+	arma::mat Gp = zeros(size(S));
 
 	arma::uvec idx(2);
 	double n = nx + ny, q = 2;
@@ -190,25 +203,23 @@ arma::mat DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, double min_pval =
 			arma::vec sub_delta = delta(idx);
 			
 			double F = kappa1 * arma::mat(trans(sub_delta) * sub_Sinv * sub_delta)(0);
-			
-			
-	/*
+						
 			int df1 = q;
 			int df2 = n - q - 1;
 			double pval = Fpval(F,df1,df2);
-		*/
-			double pval = F;
-			//pval = max(pval, min_pval);
+			pval = max(pval, min_pval);
 			
-			G(i, j) = G(j, i) = pval;				
+			G(i, j) = G(j, i) = F;
+			Gp(i, j) = Gp(j, i) = -log10(pval);
 		}
 	}			
-//	G.transform( [](double pval) { return (-log10(pval)); } );
 	G.replace(datum::nan, 0); 
+	Gp.replace(datum::nan, 0); 
 
 	printf("Done\n");
 	
+	out(0) = G;
+	out(1) = Gp;
 	
-	return(G);
+	return(out);
 }
-

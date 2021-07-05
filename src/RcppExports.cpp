@@ -8,7 +8,7 @@
 using namespace Rcpp;
 
 // DENet
-arma::sp_mat DENet(arma::sp_mat& G0, arma::mat& A, arma::uvec x, arma::uvec y, bool logpval_weights, double min_pval);
+arma::field<arma::sp_mat> DENet(arma::sp_mat& G0, arma::mat& A, arma::uvec x, arma::uvec y, bool logpval_weights, double min_pval);
 RcppExport SEXP _DENet_DENet(SEXP G0SEXP, SEXP ASEXP, SEXP xSEXP, SEXP ySEXP, SEXP logpval_weightsSEXP, SEXP min_pvalSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -24,7 +24,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // DENet_full
-arma::mat DENet_full(arma::mat& A, arma::uvec x, arma::uvec y, double min_pval);
+arma::field<arma::mat> DENet_full(arma::mat& A, arma::uvec x, arma::uvec y, double min_pval);
 RcppExport SEXP _DENet_DENet_full(SEXP ASEXP, SEXP xSEXP, SEXP ySEXP, SEXP min_pvalSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
