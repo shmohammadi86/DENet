@@ -8,8 +8,8 @@
 using namespace Rcpp;
 
 // DENet
-arma::field<arma::sp_mat> DENet(arma::sp_mat& G0, arma::mat& A, arma::uvec x, arma::uvec y, bool logpval_weights, double min_pval);
-RcppExport SEXP _DENet_DENet(SEXP G0SEXP, SEXP ASEXP, SEXP xSEXP, SEXP ySEXP, SEXP logpval_weightsSEXP, SEXP min_pvalSEXP) {
+arma::field<arma::sp_mat> DENet(arma::sp_mat& G0, arma::mat& A, arma::uvec x, arma::uvec y, bool logpval_weights, int normalization);
+RcppExport SEXP _DENet_DENet(SEXP G0SEXP, SEXP ASEXP, SEXP xSEXP, SEXP ySEXP, SEXP logpval_weightsSEXP, SEXP normalizationSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -18,22 +18,36 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::uvec >::type x(xSEXP);
     Rcpp::traits::input_parameter< arma::uvec >::type y(ySEXP);
     Rcpp::traits::input_parameter< bool >::type logpval_weights(logpval_weightsSEXP);
-    Rcpp::traits::input_parameter< double >::type min_pval(min_pvalSEXP);
-    rcpp_result_gen = Rcpp::wrap(DENet(G0, A, x, y, logpval_weights, min_pval));
+    Rcpp::traits::input_parameter< int >::type normalization(normalizationSEXP);
+    rcpp_result_gen = Rcpp::wrap(DENet(G0, A, x, y, logpval_weights, normalization));
     return rcpp_result_gen;
 END_RCPP
 }
 // DENet_full
-arma::field<arma::mat> DENet_full(arma::mat& A, arma::uvec x, arma::uvec y, double min_pval);
-RcppExport SEXP _DENet_DENet_full(SEXP ASEXP, SEXP xSEXP, SEXP ySEXP, SEXP min_pvalSEXP) {
+arma::field<arma::mat> DENet_full(arma::mat& A, arma::uvec x, arma::uvec y, int normalization);
+RcppExport SEXP _DENet_DENet_full(SEXP ASEXP, SEXP xSEXP, SEXP ySEXP, SEXP normalizationSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat& >::type A(ASEXP);
     Rcpp::traits::input_parameter< arma::uvec >::type x(xSEXP);
     Rcpp::traits::input_parameter< arma::uvec >::type y(ySEXP);
-    Rcpp::traits::input_parameter< double >::type min_pval(min_pvalSEXP);
-    rcpp_result_gen = Rcpp::wrap(DENet_full(A, x, y, min_pval));
+    Rcpp::traits::input_parameter< int >::type normalization(normalizationSEXP);
+    rcpp_result_gen = Rcpp::wrap(DENet_full(A, x, y, normalization));
+    return rcpp_result_gen;
+END_RCPP
+}
+// kStarNN
+arma::sp_mat kStarNN(arma::mat G, int sim2dist, double LC, int sym);
+RcppExport SEXP _DENet_kStarNN(SEXP GSEXP, SEXP sim2distSEXP, SEXP LCSEXP, SEXP symSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type G(GSEXP);
+    Rcpp::traits::input_parameter< int >::type sim2dist(sim2distSEXP);
+    Rcpp::traits::input_parameter< double >::type LC(LCSEXP);
+    Rcpp::traits::input_parameter< int >::type sym(symSEXP);
+    rcpp_result_gen = Rcpp::wrap(kStarNN(G, sim2dist, LC, sym));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -41,6 +55,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_DENet_DENet", (DL_FUNC) &_DENet_DENet, 6},
     {"_DENet_DENet_full", (DL_FUNC) &_DENet_DENet_full, 4},
+    {"_DENet_kStarNN", (DL_FUNC) &_DENet_kStarNN, 4},
     {NULL, NULL, 0}
 };
 
