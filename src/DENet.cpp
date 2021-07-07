@@ -360,7 +360,7 @@ arma::field<arma::mat> DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, int 
 
 
 // [[Rcpp::export]]
-arma::sp_mat kStarNN(arma::mat G, int sim2dist = 2, double LC = 1, int sym = 1) {
+arma::sp_mat kStarNN(arma::mat G, int sim2dist = 1, double LC = 1, int sym = 2) {
 	int N = G.n_rows;
 	
 	mat dist(size(G));
