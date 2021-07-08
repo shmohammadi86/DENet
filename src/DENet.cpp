@@ -130,10 +130,18 @@ mat RIN_transform(mat A, int thread_no = 4) {
 }
 
 
+// [[Rcpp::export]]
+double F2z(double F, int d1, int d2) {
+	double mu = d2 / (d2 - 2); // Only valud if d2 > 2
+	double sigma_sq = (2*d2*d2*(d1+d2-2))/(d1*(d2-2)*(d2-2)*(d2-4)); // Only valid when d2 > 4
+	
+	double z = (F - mu) / sqrt(sigma_sq);	
+	return(z);
+}
+
 
 // [[Rcpp::export]]
-arma::field<arma::sp_mat> DENet(arma::sp_mat &G0, arma::mat &A, arma::uvec x, arma::uvec y, bool logpval_weights = false, int normalization = 1) {
-	arma::field<arma::sp_mat> out(2);
+arma::sp_mat DENet(arma::sp_mat &G0, arma::mat &A, arma::uvec x, arma::uvec y, int normalization = 1) {
 	double min_pval = 1e-300;
 
 	double nx = x.n_elem;
@@ -141,7 +149,7 @@ arma::field<arma::sp_mat> DENet(arma::sp_mat &G0, arma::mat &A, arma::uvec x, ar
 	
 	if(nx < 3 | ny < 3) {
 		fprintf(stderr, "Too few samples\n");
-		return(out);
+		return(NULL);
 	}
 
 	
@@ -177,10 +185,6 @@ arma::field<arma::sp_mat> DENet(arma::sp_mat &G0, arma::mat &A, arma::uvec x, ar
 	rowvec my = mean(Ay);	
 	arma::vec delta = trans(mx - my);
 	
-	vec mu = trans(nx*mx + ny*my)/(nx+ny);
-	vec sigma = S.diag();
-	vec cv = mu / sigma;
-		
 	// Update the network
 	printf("Updating edge weights\n");
 	
@@ -194,8 +198,6 @@ arma::field<arma::sp_mat> DENet(arma::sp_mat &G0, arma::mat &A, arma::uvec x, ar
 	double kappa2 = (n - q - 1) / (q*(n - 2));
 	double kappa = kappa1 * kappa2;
 	for(; it != it_end; ++it) {
-		double w = logpval_weights? pow(10, (*it)):(*it);
-		
 		idx(0) = it.row();
 		idx(1) = it.col();
 		
@@ -208,37 +210,18 @@ arma::field<arma::sp_mat> DENet(arma::sp_mat &G0, arma::mat &A, arma::uvec x, ar
 		
 		double F = kappa1 * arma::mat(trans(sub_delta) * sub_Sinv * sub_delta)(0);
 				
-		(*it) = F;
+		(*it) = F2z(F, q, n - q - 1);
+
 	}	
 	G.replace(datum::nan, 0); 
 	
-	
-	arma::sp_mat Gp = G;	
-	for(it = Gp.begin(); it != Gp.end(); ++it) {
-		double F = (*it);
-		
-		int df1 = q;
-		int df2 = n - q - 1;
-		double pval = Fpval(F,df1,df2);
-
-		//pval = logpval_weights? (2*w*pval/(w+pval)):pval; // Combine p-values, if needed, using Harmonic mean of p-values (https://www.pnas.org/content/116/4/1195)	
-		pval = max(pval, min_pval);
-		
-		(*it) = -log10(pval);
-	}	
-
 	printf("Done\n");
 	
-	out(0) = G;
-	out(1) = Gp;
-	
-		
-	return(out);
+	return(G);
 }
 
 // [[Rcpp::export]]
-arma::field<arma::mat> DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, int normalization = 1) {	
-	arma::field<arma::mat> out(2);	
+arma::mat DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, int normalization = 1) {	
 	double min_pval = 1e-300;
 	
 	
@@ -247,7 +230,7 @@ arma::field<arma::mat> DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, int 
 	
 	if(nx < 3 | ny < 3) {
 		fprintf(stderr, "Too few samples\n");
-		return(out);
+		return(NULL);
 	}
 
 	// Make them 0-based
@@ -337,25 +320,14 @@ arma::field<arma::mat> DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, int 
 			arma::vec sub_delta = delta(idx);
 			
 			double F = kappa1 * arma::mat(trans(sub_delta) * sub_Sinv * sub_delta)(0);
-						
-			int df1 = q;
-			int df2 = n - q - 1;
-			double pval = Fpval(F,df1,df2);
-			pval = max(pval, min_pval);
 			
-			G(i, j) = G(j, i) = F;
-			Gp(i, j) = Gp(j, i) = -log10(pval);
+			G(i, j) = G(j, i) = F2z(F, q, n - q - 1);
 		}
 	}			
 	G.replace(datum::nan, 0); 
-	Gp.replace(datum::nan, 0); 
-
 	printf("Done\n");
-	
-	out(0) = G;
-	out(1) = Gp;
-	
-	return(out);
+
+	return(G);
 }
 
 

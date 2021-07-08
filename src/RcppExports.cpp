@@ -7,9 +7,22 @@
 
 using namespace Rcpp;
 
+// F2z
+double F2z(double F, int d1, int d2);
+RcppExport SEXP _DENet_F2z(SEXP FSEXP, SEXP d1SEXP, SEXP d2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type F(FSEXP);
+    Rcpp::traits::input_parameter< int >::type d1(d1SEXP);
+    Rcpp::traits::input_parameter< int >::type d2(d2SEXP);
+    rcpp_result_gen = Rcpp::wrap(F2z(F, d1, d2));
+    return rcpp_result_gen;
+END_RCPP
+}
 // DENet
-arma::field<arma::sp_mat> DENet(arma::sp_mat& G0, arma::mat& A, arma::uvec x, arma::uvec y, bool logpval_weights, int normalization);
-RcppExport SEXP _DENet_DENet(SEXP G0SEXP, SEXP ASEXP, SEXP xSEXP, SEXP ySEXP, SEXP logpval_weightsSEXP, SEXP normalizationSEXP) {
+arma::sp_mat DENet(arma::sp_mat& G0, arma::mat& A, arma::uvec x, arma::uvec y, int normalization);
+RcppExport SEXP _DENet_DENet(SEXP G0SEXP, SEXP ASEXP, SEXP xSEXP, SEXP ySEXP, SEXP normalizationSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -17,14 +30,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat& >::type A(ASEXP);
     Rcpp::traits::input_parameter< arma::uvec >::type x(xSEXP);
     Rcpp::traits::input_parameter< arma::uvec >::type y(ySEXP);
-    Rcpp::traits::input_parameter< bool >::type logpval_weights(logpval_weightsSEXP);
     Rcpp::traits::input_parameter< int >::type normalization(normalizationSEXP);
-    rcpp_result_gen = Rcpp::wrap(DENet(G0, A, x, y, logpval_weights, normalization));
+    rcpp_result_gen = Rcpp::wrap(DENet(G0, A, x, y, normalization));
     return rcpp_result_gen;
 END_RCPP
 }
 // DENet_full
-arma::field<arma::mat> DENet_full(arma::mat& A, arma::uvec x, arma::uvec y, int normalization);
+arma::mat DENet_full(arma::mat& A, arma::uvec x, arma::uvec y, int normalization);
 RcppExport SEXP _DENet_DENet_full(SEXP ASEXP, SEXP xSEXP, SEXP ySEXP, SEXP normalizationSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -53,7 +65,8 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_DENet_DENet", (DL_FUNC) &_DENet_DENet, 6},
+    {"_DENet_F2z", (DL_FUNC) &_DENet_F2z, 3},
+    {"_DENet_DENet", (DL_FUNC) &_DENet_DENet, 5},
     {"_DENet_DENet_full", (DL_FUNC) &_DENet_DENet_full, 4},
     {"_DENet_kStarNN", (DL_FUNC) &_DENet_kStarNN, 4},
     {NULL, NULL, 0}
