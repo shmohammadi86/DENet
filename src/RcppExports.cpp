@@ -20,6 +20,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// T2z
+double T2z(double T, int nx, int ny, int p);
+RcppExport SEXP _DENet_T2z(SEXP TSEXP, SEXP nxSEXP, SEXP nySEXP, SEXP pSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type T(TSEXP);
+    Rcpp::traits::input_parameter< int >::type nx(nxSEXP);
+    Rcpp::traits::input_parameter< int >::type ny(nySEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    rcpp_result_gen = Rcpp::wrap(T2z(T, nx, ny, p));
+    return rcpp_result_gen;
+END_RCPP
+}
 // DENet
 arma::sp_mat DENet(arma::sp_mat& G0, arma::mat& A, arma::uvec x, arma::uvec y, int normalization);
 RcppExport SEXP _DENet_DENet(SEXP G0SEXP, SEXP ASEXP, SEXP xSEXP, SEXP ySEXP, SEXP normalizationSEXP) {
@@ -66,6 +80,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_DENet_F2z", (DL_FUNC) &_DENet_F2z, 3},
+    {"_DENet_T2z", (DL_FUNC) &_DENet_T2z, 4},
     {"_DENet_DENet", (DL_FUNC) &_DENet_DENet, 5},
     {"_DENet_DENet_full", (DL_FUNC) &_DENet_DENet_full, 4},
     {"_DENet_kStarNN", (DL_FUNC) &_DENet_kStarNN, 4},

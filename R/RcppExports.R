@@ -5,6 +5,10 @@ F2z <- function(F, d1, d2) {
     .Call(`_DENet_F2z`, F, d1, d2)
 }
 
+T2z <- function(T, nx, ny, p) {
+    .Call(`_DENet_T2z`, T, nx, ny, p)
+}
+
 DENet <- function(G0, A, x, y, normalization = 1L) {
     .Call(`_DENet_DENet`, G0, A, x, y, normalization)
 }
