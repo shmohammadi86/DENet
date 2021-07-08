@@ -131,9 +131,9 @@ mat RIN_transform(mat A, int thread_no = 4) {
 
 
 // [[Rcpp::export]]
-double F2z(double F, int d1, int d2) {
+double F2z(double F, double d1, double d2) {
 	double mu = d2 / (d2 - 2); // Only valud if d2 > 2
-	double sigma_sq = (double)(2*d2*d2*(d1+d2-2))/(d1*(d2-2)*(d2-2)*(d2-4)); // Only valid when d2 > 4
+	double sigma_sq = (2*d2*d2*(d1+d2-2))/(d1*(d2-2)*(d2-2)*(d2-4)); // Only valid when d2 > 4
 	
 	double z = (F - mu) / sqrt(sigma_sq);	
 	return(z);
@@ -141,12 +141,9 @@ double F2z(double F, int d1, int d2) {
 
 
 // [[Rcpp::export]]
-double T2z(double T, int nx, int ny, int p) {
-	double m = (double)(nx + ny - p - 1) / (p*(nx + ny - 2));
-	int df1 = p;
-	int df2 = nx + ny - p - 1;
-	
-	double z = F2z(T*m, df1, df2);
+double T2z(double T, double nx, double ny, double p) {
+	double m = (nx + ny - p - 1) / (p*(nx + ny - 2));	
+	double z = F2z(T*m, p, nx + ny - p - 1);
 	
 	return(z);
 }

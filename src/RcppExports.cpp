@@ -8,28 +8,28 @@
 using namespace Rcpp;
 
 // F2z
-double F2z(double F, int d1, int d2);
+double F2z(double F, double d1, double d2);
 RcppExport SEXP _DENet_F2z(SEXP FSEXP, SEXP d1SEXP, SEXP d2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< double >::type F(FSEXP);
-    Rcpp::traits::input_parameter< int >::type d1(d1SEXP);
-    Rcpp::traits::input_parameter< int >::type d2(d2SEXP);
+    Rcpp::traits::input_parameter< double >::type d1(d1SEXP);
+    Rcpp::traits::input_parameter< double >::type d2(d2SEXP);
     rcpp_result_gen = Rcpp::wrap(F2z(F, d1, d2));
     return rcpp_result_gen;
 END_RCPP
 }
 // T2z
-double T2z(double T, int nx, int ny, int p);
+double T2z(double T, double nx, double ny, double p);
 RcppExport SEXP _DENet_T2z(SEXP TSEXP, SEXP nxSEXP, SEXP nySEXP, SEXP pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< double >::type T(TSEXP);
-    Rcpp::traits::input_parameter< int >::type nx(nxSEXP);
-    Rcpp::traits::input_parameter< int >::type ny(nySEXP);
-    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    Rcpp::traits::input_parameter< double >::type nx(nxSEXP);
+    Rcpp::traits::input_parameter< double >::type ny(nySEXP);
+    Rcpp::traits::input_parameter< double >::type p(pSEXP);
     rcpp_result_gen = Rcpp::wrap(T2z(T, nx, ny, p));
     return rcpp_result_gen;
 END_RCPP
