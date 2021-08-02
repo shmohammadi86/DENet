@@ -7,6 +7,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // F2z
 double F2z(double F, double d1, double d2);
 RcppExport SEXP _DENet_F2z(SEXP FSEXP, SEXP d1SEXP, SEXP d2SEXP) {
@@ -50,7 +55,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // DENet_full
-arma::mat DENet_full(arma::mat& A, arma::uvec x, arma::uvec y, int normalization);
+arma::field<arma::mat> DENet_full(arma::mat& A, arma::uvec x, arma::uvec y, int normalization);
 RcppExport SEXP _DENet_DENet_full(SEXP ASEXP, SEXP xSEXP, SEXP ySEXP, SEXP normalizationSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -64,16 +69,27 @@ BEGIN_RCPP
 END_RCPP
 }
 // kStarNN
-arma::sp_mat kStarNN(arma::mat G, int sim2dist, double LC, int sym);
-RcppExport SEXP _DENet_kStarNN(SEXP GSEXP, SEXP sim2distSEXP, SEXP LCSEXP, SEXP symSEXP) {
+arma::sp_mat kStarNN(arma::mat G, int sim2dist, double LC);
+RcppExport SEXP _DENet_kStarNN(SEXP GSEXP, SEXP sim2distSEXP, SEXP LCSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type G(GSEXP);
     Rcpp::traits::input_parameter< int >::type sim2dist(sim2distSEXP);
     Rcpp::traits::input_parameter< double >::type LC(LCSEXP);
+    rcpp_result_gen = Rcpp::wrap(kStarNN(G, sim2dist, LC));
+    return rcpp_result_gen;
+END_RCPP
+}
+// symmetrize_network
+arma::sp_mat symmetrize_network(arma::sp_mat G, int sym);
+RcppExport SEXP _DENet_symmetrize_network(SEXP GSEXP, SEXP symSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::sp_mat >::type G(GSEXP);
     Rcpp::traits::input_parameter< int >::type sym(symSEXP);
-    rcpp_result_gen = Rcpp::wrap(kStarNN(G, sim2dist, LC, sym));
+    rcpp_result_gen = Rcpp::wrap(symmetrize_network(G, sym));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -83,7 +99,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_DENet_T2z", (DL_FUNC) &_DENet_T2z, 4},
     {"_DENet_DENet", (DL_FUNC) &_DENet_DENet, 5},
     {"_DENet_DENet_full", (DL_FUNC) &_DENet_DENet_full, 4},
-    {"_DENet_kStarNN", (DL_FUNC) &_DENet_kStarNN, 4},
+    {"_DENet_kStarNN", (DL_FUNC) &_DENet_kStarNN, 3},
+    {"_DENet_symmetrize_network", (DL_FUNC) &_DENet_symmetrize_network, 2},
     {NULL, NULL, 0}
 };
 

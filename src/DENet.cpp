@@ -81,6 +81,11 @@ inline void ParallelFor(size_t start, size_t end, size_t thread_no,
 arma::mat minv2x2(arma::mat A) {
 	if(A.n_rows != 2 | A.n_cols != 2) {
 		fprintf(stderr, "minv2x2: Matrix should be 2x2. return Null\n");
+		return(A);
+	}
+        double denom = A(0, 0)*A(1, 1) - A(0, 1)*A(1, 0);
+	if(denom == 0) {
+		return(A);
 	}
 	arma::mat Ainv = zeros(size(A));
 	Ainv(0, 0) = A(1, 1);
@@ -88,7 +93,6 @@ arma::mat minv2x2(arma::mat A) {
 	Ainv(1, 0) = -A(1, 0);
 	Ainv(1, 1) = A(0, 0);
 	
-	double denom = A(0, 0)*A(1, 1) - A(0, 1)*A(1, 0);
 	Ainv /= denom;
 	
 	return(Ainv);
@@ -109,13 +113,20 @@ mat RIN_transform(mat A, int thread_no = 4) {
   int M = A.n_rows;
   int N = A.n_cols;
 
+  uvec perm = randperm(M);
+  uvec inverse_perm = stable_sort_index(perm);
+    
   mat Zr = zeros(M, N);
   ParallelFor(0, N, thread_no, [&](size_t i, size_t threadId) {
     vec v = A.col(i);
 
+    v = v(perm);
+
     uvec row_perm_forward = stable_sort_index(v);
     uvec row_perm = stable_sort_index(row_perm_forward);
     vec p = (row_perm + ones(size(row_perm))) / (row_perm.n_elem + 1);
+
+    p = p(inverse_perm);
 
     vec v_RINT = zeros(size(p));
     for (int j = 0; j < p.n_elem; j++) {
@@ -177,7 +188,9 @@ arma::sp_mat DENet(arma::sp_mat &G0, arma::mat &A, arma::uvec x, arma::uvec y, i
 			Z = RIN_transform(Z);
 			break;		
 	}	
-	
+
+	Z.replace(datum::nan, 0);  // replace each NaN with 0
+
 	arma::mat Ax = Z.rows(x);
 	arma::mat Ay = Z.rows(y);
 
@@ -211,16 +224,20 @@ arma::sp_mat DENet(arma::sp_mat &G0, arma::mat &A, arma::uvec x, arma::uvec y, i
 		idx(1) = it.col();
 		
 		arma::mat sub_S = S(idx, idx);
+		double S_det = sub_S(0, 0)*sub_S(1, 1) - sub_S(0, 1)*sub_S(1, 0);
+		if(S_det == 0) {
+			(*it) = -1000;
+			continue;
+		}
 		arma::mat sub_Sinv = minv2x2(sub_S);		
 		arma::vec sub_delta = delta(idx);
 		
-		mat sx = Sx(idx, idx);
-		mat sy = Sy(idx, idx);
-		
-		double F = kappa1 * arma::mat(trans(sub_delta) * sub_Sinv * sub_delta)(0);
-				
-		(*it) = F2z(F, q, n - q - 1);
+		//mat sx = Sx(idx, idx);
+		//mat sy = Sy(idx, idx);
 
+		double stat = arma::mat(trans(sub_delta) * sub_Sinv * sub_delta)(0);
+                double T = stat * (nx * ny)/(nx + ny);
+                (*it) = T2z(T, nx, ny, 2); //F2z(F, q, n - q - 1);
 	}	
 	G.replace(datum::nan, 0); 
 	
@@ -230,7 +247,7 @@ arma::sp_mat DENet(arma::sp_mat &G0, arma::mat &A, arma::uvec x, arma::uvec y, i
 }
 
 // [[Rcpp::export]]
-arma::mat DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, int normalization = 1) {	
+arma::field<arma::mat> DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, int normalization = 1) {	
 	double min_pval = 1e-300;
 	
 	
@@ -239,7 +256,9 @@ arma::mat DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, int normalization
 	
 	if(nx < 3 | ny < 3) {
 		fprintf(stderr, "Too few samples\n");
-		return(NULL);
+		arma::field<mat> out(4);
+
+		return(out);
 	}
 
 	// Make them 0-based
@@ -257,7 +276,8 @@ arma::mat DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, int normalization
 			Z = RIN_transform(Z);
 			break;				
 	}	
-	
+	Z.replace(datum::nan, 0);  // replace each NaN with 0
+
 	arma::mat Ax = Z.rows(x);
 	arma::mat Ay = Z.rows(y);
 	
@@ -269,10 +289,12 @@ arma::mat DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, int normalization
 	Sy.replace(datum::nan, 0); 
 	
 	arma::mat S = ((nx - 1)*Sx + (ny - 1)*Sy) / (nx + ny - 2);	
-	
+
+
 	rowvec mx = mean(Ax);
 	rowvec my = mean(Ay);	
 	arma::vec delta = trans(mx - my);
+
 /*
 	printf("\tPx variance ... \n");
 	mat Ax_shifted = Ax.each_row() - mx;
@@ -311,7 +333,6 @@ arma::mat DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, int normalization
 	printf("Updating edge weights\n");
 	
 	arma::mat G = zeros(size(S));
-	arma::mat Gp = zeros(size(S));
 
 	arma::uvec idx(2);
 	double n = nx + ny, q = 2;
@@ -325,45 +346,64 @@ arma::mat DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, int normalization
 			idx(1) = j;
 			
 			arma::mat sub_S = S(idx, idx);
+                	double S_det = sub_S(0, 0)*sub_S(1, 1) - sub_S(0, 1)*sub_S(1, 0);
+                	if(S_det == 0) {			
+                        	G(i, j) = G(j, i)  = -1000;
+                        	continue;
+                	}			
 			arma::mat sub_Sinv = minv2x2(sub_S);		
 			arma::vec sub_delta = delta(idx);
 			
-			double F = kappa1 * arma::mat(trans(sub_delta) * sub_Sinv * sub_delta)(0);
-			
-			G(i, j) = G(j, i) = F2z(F, q, n - q - 1);
+			double stat = arma::mat(trans(sub_delta) * sub_Sinv * sub_delta)(0);
+			double T = stat * (nx * ny)/(nx + ny);
+			G(i, j) = G(j, i) = T2z(T, nx, ny, 2); //F2z(F, q, n - q - 1);
 		}
 	}			
 	G.replace(datum::nan, 0); 
 	printf("Done\n");
 
-	return(G);
+	arma::field<mat> out(4);
+	out(0) = Z;
+	out(1) = S;
+	out(2) = delta;
+	out(3) = G;
+
+	return(out);
 }
 
 
 // [[Rcpp::export]]
-arma::sp_mat kStarNN(arma::mat G, int sim2dist = 1, double LC = 1, int sym = 2) {
+arma::sp_mat kStarNN(arma::mat G, int sim2dist = 3, double LC = 1) {
 	int N = G.n_rows;
 	
 	mat dist(size(G));
 	switch(sim2dist) {
 		case 0:
+		{
 			dist = G;
 			break;
-		
+		}
 		case 1:
+		{
 			dist = 1 / G;
 			break;			
-
+		}
 		case 2:
+		{
 			double m = min(min(G));
 			double M = max(max(G));
 			dist = 1.0 - (G - m) / (M - m);
+			break;
+		}
+		case 3:
+			dist = -log(G);
+			dist = dist - min(min(dist));
 			break;
 	}
 	dist.replace(datum::nan, 0); 
 	dist.diag().zeros();
 	
-	
+	return(sp_mat(dist));	
 	
 	mat beta = LC * sort(dist, "ascend", 1);
 	vec beta_sum = zeros(N);
@@ -406,24 +446,30 @@ arma::sp_mat kStarNN(arma::mat G, int sim2dist = 1, double LC = 1, int sym = 2) 
 		}
 	});
 	G_puned.replace(datum::nan, 0);  // replace each NaN with 0
-	
-	sp_mat G_sym;
-	sp_mat Gt_pruned = trans(G_puned);			
+
+	return(G_puned);
+}
+
+// [[Rcpp::export]]
+arma::sp_mat symmetrize_network(arma::sp_mat G, int sym = 1) {
+	arma::sp_mat G_sym;
+	arma::sp_mat Gt = trans(G);			
 	switch(sym) {
 		case 0:
-			G_sym = G_puned;
+			G_sym = G;
 			break;
 			
 		case 1:		
-			G_sym = (G_puned + Gt_pruned);
+			G_sym = (G + Gt);
 			G_sym.for_each([](sp_mat::elem_type &val) { val /= 2.0; });
 			break;
 			
 		case 2:
-			G_sym = sqrt(G_puned % Gt_pruned);
+			G_sym = sqrt(G % Gt);
 	}
 
 	G_sym.diag().zeros();
 	
 	return(G_sym);
 }
+

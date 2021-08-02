@@ -17,7 +17,11 @@ DENet_full <- function(A, x, y, normalization = 1L) {
     .Call(`_DENet_DENet_full`, A, x, y, normalization)
 }
 
-kStarNN <- function(G, sim2dist = 1L, LC = 1, sym = 2L) {
-    .Call(`_DENet_kStarNN`, G, sim2dist, LC, sym)
+kStarNN <- function(G, sim2dist = 3L, LC = 1) {
+    .Call(`_DENet_kStarNN`, G, sim2dist, LC)
+}
+
+symmetrize_network <- function(G, sym = 1L) {
+    .Call(`_DENet_symmetrize_network`, G, sym)
 }
 
