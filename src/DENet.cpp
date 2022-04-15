@@ -402,9 +402,7 @@ arma::sp_mat kStarNN(arma::mat G, int sim2dist = 3, double LC = 1) {
 	}
 	dist.replace(datum::nan, 0); 
 	dist.diag().zeros();
-	
-	return(sp_mat(dist));	
-	
+		
 	mat beta = LC * sort(dist, "ascend", 1);
 	vec beta_sum = zeros(N);
 	vec beta_sq_sum = zeros(N);
