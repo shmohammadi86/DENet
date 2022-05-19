@@ -258,7 +258,7 @@ arma::mat DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, int normalization
 		fprintf(stderr, "Too few samples\n");
 		arma::field<mat> out(4);
 
-		return(out);
+		return(mat());
 	}
 
 	// Make them 0-based
