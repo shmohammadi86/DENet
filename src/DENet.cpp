@@ -247,7 +247,7 @@ arma::sp_mat DENet(arma::sp_mat &G0, arma::mat &A, arma::uvec x, arma::uvec y, i
 }
 
 // [[Rcpp::export]]
-arma::field<arma::mat> DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, int normalization = 1) {	
+arma::mat DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, int normalization = 1) {	
 	double min_pval = 1e-300;
 	
 	
@@ -362,13 +362,7 @@ arma::field<arma::mat> DENet_full(arma::mat &A, arma::uvec x, arma::uvec y, int 
 	G.replace(datum::nan, 0); 
 	printf("Done\n");
 
-	arma::field<mat> out(4);
-	out(0) = Z;
-	out(1) = S;
-	out(2) = delta;
-	out(3) = G;
-
-	return(out);
+	return(G);
 }
 
 
@@ -433,7 +427,7 @@ arma::sp_mat kStarNN(arma::mat G, int sim2dist = 3, double LC = 1) {
 		
 		if(0 < neighbor_no) {
 			vec w = delta(span(0, neighbor_no-1));
-			w = w / sum(w);
+			// w = w / sum(w);
 			
 			int dst = v;
 			uvec v_idx = sort_index(trans(dist.row(v)), "ascend");
