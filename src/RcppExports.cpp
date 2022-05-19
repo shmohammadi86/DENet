@@ -55,7 +55,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // DENet_full
-arma::field<arma::mat> DENet_full(arma::mat& A, arma::uvec x, arma::uvec y, int normalization);
+arma::mat DENet_full(arma::mat& A, arma::uvec x, arma::uvec y, int normalization);
 RcppExport SEXP _DENet_DENet_full(SEXP ASEXP, SEXP xSEXP, SEXP ySEXP, SEXP normalizationSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
